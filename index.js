@@ -8,6 +8,10 @@ import cookieParser from 'cookie-parser';
 // import middlewares
 import logger from './middleware/logger.js';
 
+//import tables
+import createUsersTable from './models/userModels.js';
+import createFlightsTable from './models/flightModels.js';
+
 // import routes
 import flightRoutes from './routes/flightRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -37,6 +41,10 @@ app.set('views', path.join(PATH, 'views'));
 
 // use middlewares
 app.use(logger);
+
+//use tables
+createUsersTable();
+createFlightsTable();
 
 // use routes
 app.use('/api', flightRoutes);

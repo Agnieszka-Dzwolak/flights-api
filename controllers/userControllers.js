@@ -6,14 +6,17 @@ import validatePassword from '../utils/validatePassword.js';
 import hashPassword from '../utils/hashPassword.js';
 import matchPassword from '../utils/matchPasswords.js';
 
-import User from '../models/userModels.js';
+import query from '../config/db.js';
+import createUsersTable from '../models/userModels.js';
 
 const userControllers = {
-    register: (req, res) => {
+    register: async (req, res) => {
         const { email, password, rePassword } = req.body;
         //check if email already exists
-        const emailExist = User.getByEmail(email);
-        if (emailExist) {
+        const checkEmailQuery = `SELECT * FROM users WHERE email=?`;
+        const checkEmailParams = [email];
+        const result = await query(checkEmailQuery, checkEmailParams);
+        if (result.length > 0) {
             return res.status(400).render('404', {
                 title: 'Email already exists',
                 message: 'Email already exist, please register'
@@ -28,28 +31,37 @@ const userControllers = {
             //hash the password
             const hashedPassword = hashPassword(password);
             //create user
-            const newUser = User.add({ email, password: hashedPassword });
-            //redirect to login
-            return res.status(302).redirect('/api/login');
-        } else {
-            return res.status(400).render('404', {
-                title: 'Incorrect email or password',
-                message: 'Incorrect email or password'
-            });
+
+            const sqlQuery = `INSERT INTO users (email, password) VALUES (?, ?)`;
+            const params = [email, hashedPassword];
+            const results = await query(sqlQuery, params);
+            if (results.affectedRows > 0) {
+                //redirect to login
+                return res.status(302).redirect('/api/login');
+            } else {
+                return res.status(400).render('404', {
+                    title: 'Incorrect email or password',
+                    message: 'Incorrect email or password'
+                });
+            }
         }
     },
-    login: (req, res) => {
+    login: async (req, res) => {
         const { email, password } = req.body;
         //check if the email exist
-        const emailExist = User.getByEmail(email);
-        if (!emailExist) {
+
+        const sqlQuery = `SELECT * FROM users WHERE email=?`;
+        const params = [email];
+        const results = await query(sqlQuery, params);
+
+        if (results.length === 0) {
             return res.status(400).render('404', {
                 title: 'Email does not exist',
                 message: 'Email does not exist, please register'
             });
         }
         //check if the password is correct
-        bcrypt.compare(password, emailExist.password, (err, isValid) => {
+        bcrypt.compare(password, results[0].password, (err, isValid) => {
             if (err) {
                 console.error(err);
             }

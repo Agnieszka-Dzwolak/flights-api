@@ -1,26 +1,21 @@
-import { v4 as Id } from 'uuid';
+import query from '../config/db.js';
 
-const users = [
-    {
-        id: Id(),
-        email: 'agaaa@gmail.com',
-        password: '12345'
+//create a new user table
+const createUsersTable = async () => {
+    const sqlQuery = `CREATE TABLE IF NOT EXISTS users (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            email VARCHAR(100) NOT NULL UNIQUE,
+            password VARCHAR(100) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        );`;
+
+    try {
+        await query(sqlQuery);
+        console.log('Users table created');
+    } catch (err) {
+        console.error(err);
     }
-];
+};
 
-class User {
-    static getByEmail(email) {
-        return users.find((user) => user.email === email);
-    }
-
-    static add(user) {
-        const newUser = {
-            id: Id(),
-            ...user
-        };
-        users.unshift(newUser);
-        return newUser;
-    }
-}
-
-export default User;
+export default createUsersTable;

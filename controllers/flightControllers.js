@@ -1,16 +1,29 @@
-import Flight from '../models/flightModels.js';
+import query from '../config/db.js';
 
 const flightControllers = {
-    getAllFlights: (req, res) => {
-        const flights = Flight.getAll();
-        const { token } = req.cookies;
-        res.status(200).render('flights', { flights, token });
+    getAllFlights: async (req, res) => {
+        try {
+            const sqlQuery = 'SELECT * FROM flights';
+            const results = await query(sqlQuery);
+            const { token } = req.cookies;
+            res.status(200).render('flights', { flights: results, token });
+        } catch (err) {
+            console.error(err);
+            res.status(500).render({
+                title: 'Server error',
+                message: 'Server error'
+            });
+        }
     },
-    getFlightById: (req, res) => {
+    getFlightById: async (req, res) => {
         const { id } = req.params;
-        const flight = Flight.getById(id);
-        if (flight) {
-            res.status(200).render('flight', { flight });
+
+        const sqlQuery = `SELECT * FROM flights WHERE id=?`;
+        const params = [id];
+
+        const results = await query(sqlQuery, params);
+        if (results.length > 0) {
+            res.status(200).render('flight', { flight: results[0] });
         } else {
             res.status(404).render('404', {
                 title: 'The flight does not exist',
@@ -21,12 +34,15 @@ const flightControllers = {
     addFlightForm: (req, res) => {
         res.status(200).render('add-flight-form');
     },
-    addFlight: (req, res) => {
+    addFlight: async (req, res) => {
         const { from, to, date, price, company } = req.body;
 
         if (from && to && date && price && company) {
-            Flight.add({ from, to, date, price, company });
-            res.status(201).redirect('/api/flights');
+            const sqlQuery = `INSERT INTO flights (from_flight, to_flight, date, price, company) VALUES (?, ?, ?, ?, ?)`;
+            const params = [from, to, date, price, company];
+
+            await query(sqlQuery, params);
+            res.status(302).redirect('/api/flights');
         } else {
             res.status(400).render('404', {
                 title: 'Invalid input',
@@ -34,16 +50,17 @@ const flightControllers = {
             });
         }
     },
-    updateFlight: (req, res) => {
+    updateFlight: async (req, res) => {
         const { from, to, date, price, company } = req.body;
         const { id } = req.params;
 
-        const flight = Flight.getById(id);
-        if (flight) {
-            if (from && to && date && price && company) {
-                Flight.update(id, { from, to, date, price, company });
-                res.status(200).json(flight);
-            }
+        const sqlQuery = `UPDATE flights SET from_flight=?, to_flight=?, date=?, price=?, company=? WHERE id=?`;
+        const params = [from, to, date, price, company, id];
+
+        const results = await query(sqlQuery, params);
+
+        if (results.affectedRows > 0) {
+            res.status(302).redirect('/api/flights');
         } else {
             res.status(400).json({
                 title: 'Flight not found',
@@ -51,14 +68,17 @@ const flightControllers = {
             });
         }
     },
-    deleteFlight: (req, res) => {
+    deleteFlight: async (req, res) => {
         const { id } = req.params;
-        const flight = Flight.getById(id);
-        if (flight) {
-            Flight.deleteFlight(id);
-            res.status(200).json(flight);
+
+        const sqlQuery = `DELETE FROM flights WHERE id=?`;
+        const params = [id];
+        const results = await query(sqlQuery, params);
+
+        if (results.affectedRows > 0) {
+            res.status(302).redirect('/api/flights');
         } else {
-            res.status(404).json({
+            res.status(404).render('404', {
                 title: 'Flight not found',
                 message: 'Flight not found'
             });

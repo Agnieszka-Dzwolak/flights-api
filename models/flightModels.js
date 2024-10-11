@@ -1,55 +1,23 @@
-import { v4 as Id } from 'uuid';
+import query from '../config/db.js';
 
-const flights = [
-    {
-        id: Id(),
-        from: 'Paris',
-        to: 'Warsaw',
-        date: '2024-01-02',
-        price: 700,
-        company: 'Air France'
-    },
-    {
-        id: Id(),
-        from: 'Brussels',
-        to: 'Berlin',
-        date: '2024-08-04',
-        price: 800,
-        company: 'Brussels Airlines'
-    }
-];
+//create flight tables
+const createFlightsTable = async () => {
+    const sqlQuery = `CREATE TABLE IF NOT EXISTS flights (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        from_flight VARCHAR(255) NOT NULL,
+        to_flight VARCHAR(255) NOT NULL,
+        date DATE NOT NULL,
+        price DECIMAL(10,2) NOT NULL,
+        company VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );`;
 
-class Flight {
-    static getAll() {
-        return flights;
+    try {
+        await query(sqlQuery);
+        console.log('Flights table created');
+    } catch (err) {
+        console.error(err);
     }
-    static getById(id) {
-        return flights.find((flight) => flight.id === id);
-    }
-    static add(flight) {
-        const newFlight = {
-            id: Id(),
-            ...flight
-        };
-        flights.unshift(newFlight);
-        return newFlight;
-    }
+};
 
-    static update(id, flight) {
-        const updatedFlight = flights.find((flight) => flight.id === id);
-        if (updatedFlight) {
-            updatedFlight.from = flight.from;
-            updatedFlight.to = flight.to;
-            updatedFlight.date = flight.date;
-            updatedFlight.price = flight.price;
-            updatedFlight.company = flight.company;
-        }
-    }
-    static deleteFlight(id, flight) {
-        const index = flights.findIndex((flight) => flight.id === id);
-        flights.splice(index, 1);
-        return { id };
-    }
-}
-
-export default Flight;
+export default createFlightsTable;
